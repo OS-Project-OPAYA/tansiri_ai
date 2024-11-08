@@ -1,19 +1,3 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.tensorflow.lite.examples.detection;
 
 import android.Manifest;
@@ -35,24 +19,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Trace;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -88,15 +67,17 @@ public abstract class CameraActivity extends AppCompatActivity
   private Runnable imageConverter;
   protected ArrayList<String> modelStrings = new ArrayList<String>();
 
-  private LinearLayout bottomSheetLayout;
-  private LinearLayout gestureLayout;
-  private BottomSheetBehavior<LinearLayout> sheetBehavior;
+//  private LinearLayout bottomSheetLayout;
+//  private LinearLayout gestureLayout;
+//  private BottomSheetBehavior<LinearLayout> sheetBehavior;
 
-  protected TextView frameValueTextView, cropValueTextView, inferenceTimeTextView;
-  protected ImageView bottomSheetArrowImageView;
+  protected TextView inferenceTimeTextView;
+//  protected ImageView bottomSheetArrowImageView;
   private ImageView plusImageView, minusImageView;
   protected ListView deviceView;
   protected TextView threadsTextView;
+  private TextView detectclassTextView;
+  private TextView detectedclassInfoTextView;
   protected ListView modelView;
   /** Current indices of device and model. */
   int currentDevice = -1;
@@ -110,9 +91,10 @@ public abstract class CameraActivity extends AppCompatActivity
     LOGGER.d("onCreate " + this);
     super.onCreate(null);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    detectclassTextView = findViewById(R.id.detectclass);
+    detectedclassInfoTextView = findViewById(R.id.detectedclass_info);//여기서 감지된 객체 클래스명을 보냄
 
     setContentView(R.layout.tfe_od_activity_camera);
-
     if (hasPermission()) {
       setFragment();
     } else {
@@ -126,7 +108,7 @@ public abstract class CameraActivity extends AppCompatActivity
     deviceView = findViewById(R.id.device_list);
     deviceStrings.add("CPU");
     deviceStrings.add("GPU");
-    deviceStrings.add("NNAPI");
+//    deviceStrings.add("NNAPI");
     deviceView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     ArrayAdapter<String> deviceAdapter =
             new ArrayAdapter<>(
@@ -142,10 +124,10 @@ public abstract class CameraActivity extends AppCompatActivity
               }
             });
 
-    bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
-    gestureLayout = findViewById(R.id.gesture_layout);
-    sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
-    bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
+//    bottomSheetLayout = findViewById(R.id.bottom_sheet_layout);
+//    gestureLayout = findViewById(R.id.gesture_layout);
+//    sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
+//    bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
     modelView = findViewById((R.id.model_list));
 
     modelStrings = getModelStrings(getAssets(), ASSET_PATH);
@@ -164,55 +146,55 @@ public abstract class CameraActivity extends AppCompatActivity
               }
             });
 
-    ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
-    vto.addOnGlobalLayoutListener(
-        new ViewTreeObserver.OnGlobalLayoutListener() {
-          @Override
-          public void onGlobalLayout() {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-              gestureLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-            } else {
-              gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-            }
-            //                int width = bottomSheetLayout.getMeasuredWidth();
-            int height = gestureLayout.getMeasuredHeight();
+//    ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
+//    vto.addOnGlobalLayoutListener(
+//        new ViewTreeObserver.OnGlobalLayoutListener() {
+//          @Override
+//          public void onGlobalLayout() {
+//            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+//              gestureLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+//            } else {
+//              gestureLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+//            }
+//            //                int width = bottomSheetLayout.getMeasuredWidth();
+//            int height = gestureLayout.getMeasuredHeight();
+//
+//            sheetBehavior.setPeekHeight(height);
+//          }
+//        });
+//    sheetBehavior.setHideable(false);
+//
+//    sheetBehavior.setBottomSheetCallback(
+//        new BottomSheetBehavior.BottomSheetCallback() {
+//          @Override
+//          public void onStateChanged(@NonNull View bottomSheet, int newState) {
+//            switch (newState) {
+//              case BottomSheetBehavior.STATE_HIDDEN:
+//                break;
+//              case BottomSheetBehavior.STATE_EXPANDED:
+//                {
+//                  bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_down);
+//                }
+//                break;
+//              case BottomSheetBehavior.STATE_COLLAPSED:
+//                {
+//                  bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
+//                }
+//                break;
+//              case BottomSheetBehavior.STATE_DRAGGING:
+//                break;
+//              case BottomSheetBehavior.STATE_SETTLING:
+//                bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
+//                break;
+//            }
+//          }
 
-            sheetBehavior.setPeekHeight(height);
-          }
-        });
-    sheetBehavior.setHideable(false);
+//          @Override
+//          public void onSlide(@NonNull View bottomSheet, float slideOffset) {}
+//        });
 
-    sheetBehavior.setBottomSheetCallback(
-        new BottomSheetBehavior.BottomSheetCallback() {
-          @Override
-          public void onStateChanged(@NonNull View bottomSheet, int newState) {
-            switch (newState) {
-              case BottomSheetBehavior.STATE_HIDDEN:
-                break;
-              case BottomSheetBehavior.STATE_EXPANDED:
-                {
-                  bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_down);
-                }
-                break;
-              case BottomSheetBehavior.STATE_COLLAPSED:
-                {
-                  bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
-                }
-                break;
-              case BottomSheetBehavior.STATE_DRAGGING:
-                break;
-              case BottomSheetBehavior.STATE_SETTLING:
-                bottomSheetArrowImageView.setImageResource(R.drawable.icn_chevron_up);
-                break;
-            }
-          }
-
-          @Override
-          public void onSlide(@NonNull View bottomSheet, float slideOffset) {}
-        });
-
-    frameValueTextView = findViewById(R.id.frame_info);
-    cropValueTextView = findViewById(R.id.crop_info);
+//    frameValueTextView = findViewById(R.id.frame_info);
+//    cropValueTextView = findViewById(R.id.crop_info);
     inferenceTimeTextView = findViewById(R.id.inference_info);
 
     plusImageView.setOnClickListener(this);
@@ -294,7 +276,25 @@ public abstract class CameraActivity extends AppCompatActivity
             isProcessingFrame = false;
           }
         };
-    processImage();
+    String detectedObject = processImage();
+    if (detectedObject != null && !detectedObject.isEmpty()) {
+      detectclassTextView.setText("감지된 객체:");
+      detectedclassInfoTextView.setText(detectedObject);
+    } else {
+      detectclassTextView.setText("감지된 객체 없음");
+      detectedclassInfoTextView.setText("");
+    }
+
+
+    if (rgbBytes != null) {
+      int detectedObjectColor = 0xFF00FF00; // Green bounding box color
+      for (int i = 0; i < rgbBytes.length; i++) {
+        if (rgbBytes[i] == detectedObjectColor) {
+          // 진동 코드 또는 기타 알림 기능을 추가할 수 있습니다.
+          break;
+        }
+      }
+    }
   }
 
   /** Callback for Camera2 API */
@@ -353,6 +353,15 @@ public abstract class CameraActivity extends AppCompatActivity
           };
 
       processImage();
+      if (rgbBytes != null) {
+        int detectedObjectColor = 0xFF00FF00; // Green bounding box color
+        for (int i = 0; i < rgbBytes.length; i++) {
+          if (rgbBytes[i] == detectedObjectColor) {
+            // 진동 코드 또는 기타 알림 기능을 추가할 수 있습니다.
+            break;
+          }
+        }
+      }
     } catch (final Exception e) {
       LOGGER.e(e, "Exception!");
       Trace.endSection();
@@ -594,20 +603,20 @@ public abstract class CameraActivity extends AppCompatActivity
     }
   }
 
-  protected void showFrameInfo(String frameInfo) {
-    frameValueTextView.setText(frameInfo);
-  }
+//  protected void showFrameInfo(String frameInfo) {
+//    frameValueTextView.setText(frameInfo);
+//  }
 
-  protected void showCropInfo(String cropInfo) {
-    cropValueTextView.setText(cropInfo);
-  }
+//  protected void showCropInfo(String cropInfo) {
+//    cropValueTextView.setText(cropInfo);
+//  }
 
   protected void showInference(String inferenceTime) {
     inferenceTimeTextView.setText(inferenceTime);
   }
 
   protected abstract void updateActiveModel();
-  protected abstract void processImage();
+  protected abstract String processImage();
 
   protected abstract void onPreviewSizeChosen(final Size size, final int rotation);
 
