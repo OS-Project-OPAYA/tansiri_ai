@@ -1,19 +1,3 @@
-/*
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.tensorflow.lite.examples.detection;
 
 import android.graphics.Bitmap;
@@ -30,6 +14,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -46,10 +31,7 @@ import org.tensorflow.lite.examples.detection.tflite.DetectorFactory;
 import org.tensorflow.lite.examples.detection.tflite.YoloV5Classifier;
 import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 
-/**
- * An activity that uses a TensorFlowMultiBoxDetector and ObjectTracker to detect and then track
- * objects.
- */
+
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
     private static final Logger LOGGER = new Logger();
 
@@ -188,14 +170,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 finish();
             }
 
+            detector.useGpu();  // GPU 모드를 강제로 설정
 
-            if (device.equals("CPU")) {
-                detector.useCPU();
-            } else if (device.equals("GPU")) {
-                detector.useGpu();
-            } else if (device.equals("NNAPI")) {
-                detector.useNNAPI();
-            }
+//            if (device.equals("CPU")) {
+//                detector.useCPU();
+//            } else if (device.equals("GPU")) {
+//                detector.useGpu();
+//            } else if (device.equals("NNAPI")) {
+//                detector.useNNAPI();
+//            }
             detector.setNumThreads(numThreads);
 
             int cropSize = detector.getInputSize();
@@ -213,7 +196,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
 
     @Override
-    protected void processImage() {
+    protected String processImage() {
         ++timestamp;
         final long currTimestamp = timestamp;
         trackingOverlay.postInvalidate();
@@ -221,7 +204,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         // No mutex needed as this method is not reentrant.
         if (computingDetection) {
             readyForNextImage();
-            return;
+            return null;
         }
         computingDetection = true;
         LOGGER.i("Preparing image " + currTimestamp + " for detection in bg thread.");
@@ -286,13 +269,22 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                                 new Runnable() {
                                     @Override
                                     public void run() {
-                                        showFrameInfo(previewWidth + "x" + previewHeight);
-                                        showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
+                                        if (!mappedRecognitions.isEmpty()) {
+                                            String detectedClassName = mappedRecognitions.get(0).getTitle(); // 첫 번째 객체의 클래스명
+                                            TextView detectedClassInfo = findViewById(R.id.detectedclass_info);
+                                            detectedClassInfo.setText(detectedClassName);
+                                        } else {
+                                            TextView detectedClassInfo = findViewById(R.id.detectedclass_info);
+                                            detectedClassInfo.setText("감지된 객체 없음");
+                                        }
+//                                        showFrameInfo(previewWidth + "x" + previewHeight);
+//                                        showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
                                         showInference(lastProcessingTimeMs + "ms");
                                     }
                                 });
                     }
                 });
+        return null;
     }
 
     @Override
